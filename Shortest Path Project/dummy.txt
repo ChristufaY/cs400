@@ -1,0 +1,11 @@
+ORD,JFK,170,738,A useful description
+LAX,ORD,120,1729,A useful description
+ORD,LAX,110,1729,A useful description
+JFK,LAX,130,2457,A useful description
+DFW,ORD,90,801,A useful description
+MIA,ORD,100,1198,A useful description
+MIA,DFW,60,1121,A useful description
+SEA,DFW,80,1657,A useful description
+DEN,ORD,85,891,A useful description
+DEN,SFO,90,961,A useful description
+SFO,DFW,90,1462,A useful description

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+
+main() {
+    TEAM=$(grep -e "^\(.*,\)\?${USER}\(,.*\)\?$" /p/course/cs400/public/html/teams_2021_02_17.csv)
+    IFS=, read -a MEMBERS <<< $TEAM
+    NOTFOUND=""
+    for MEMBER in ${MEMBERS[@]}; do
+	DIR=$(eval "echo ~${MEMBER}")
+	if [[ -d "${DIR}/SecondGitActivity/${MEMBER}" ]]; then
+	    if [[ $MEMBER != $USER ]]; then
+		echo "Team member ${MEMBER}'s directory found at: ${DIR}/SecondGitActivity/${MEMBER}/"
+	    else
+		echo "Team member ${MEMBER}'s directory found.  This is your directory."
+	    fi
+	else
+	    NOTFOUND="$MEMBER $NOTFOUND"
+	fi
+    done
+    if [[ ${#NOTFOUND} > 0 ]]; then
+	echo "Could not find directories for members: $NOTFOUND"
+    fi
+}
+
+
+main "$@"

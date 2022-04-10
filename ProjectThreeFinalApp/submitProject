@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+PROJECTNAME="ProjectThree"
+#note that this script excludes the junit5.jar
+
+check() {
+    SIZE=$(du -s | cut -f 1) # ensure folder size is under 10MB
+    if [[ $SIZE -gt 10240 ]]; then abort "submission too large: $SIZE > 10240 limit"; fi
+    # make additional checks as needed
+}
+
+main() {
+    read -p "Enter your CSL username: " USERNAME
+    read -p "Enter your group name (two letters): " GROUPNAME
+    GROUPNAME=${GROUPNAME^^} # make upper case
+    read -p "Enter team color for this submission [R]ed or [B]lue: " TEAMCOLOR
+    TEAMCOLOR=${TEAMCOLOR:0:1}
+    if [[ ${TEAMCOLOR^} = "R" ]]; then
+	TEAMCOLOR="Red";
+    elif [[ ${TEAMCOLOR^} = "B" ]]; then
+	TEAMCOLOR="Blue"
+    else
+	echo "Did not recognize color starting with letter: \'${TEAMCOLOR^}\'"
+	exit 1
+    fi
+    TEAMFOLDER="teams/$GROUPNAME-$TEAMCOLOR"
+    
+    if [[ $# -eq 0 ]]; then  # submit contents of current folder
+	submit
+    elif [[ $1 == -download ]]; then # retrieve archive or recent submission
+	download
+    else # display usage message
+        echo 'Usage: submitProject [-download]'
+        echo 'Run "submit" to record the contents of your working directory as a submission for this group project.'
+        echo 'Run "submit -download" to retrieve an archive of your teams most recent submission in a file named recent.tar.gz.'
+    fi
+}
+
+submit() {
+    echo "Checking submission contents... "
+    check
+    echo "Transferring files (you may be prompted for your csl password for this)... "
+    SUBMISSION=$(TZ=UTC+6 date +"%Y.%m.%d-%H.%M.%S")
+    # if hidden files other than . and .. exist, then make sure to copy them
+    if ls ./.[^.]* > /dev/null 2>&1; then
+	rsync -r --exclude junit5.jar ./{*,.[^.]*} --rsync-path="mkdir -p /p/course/cs400/activities/submissions/${TEAMFOLDER}/${PROJECTNAME} && rsync" ${USERNAME}@best-linux.cs.wisc.edu:/p/course/cs400/activities/submissions/${TEAMFOLDER}/${PROJECTNAME}/${SUBMISSION}/
+    # otherwise avoid the error message stating that they don't exist
+    else
+	rsync -r --exclude junit5.jar * --rsync-path="mkdir -p /p/course/cs400/activities/submissions/${TEAMFOLDER}/${PROJECTNAME} && rsync" ${USERNAME}@best-linux.cs.wisc.edu:/p/course/cs400/activities/submissions/${TEAMFOLDER}/${PROJECTNAME}/${SUBMISSION}/
+    fi
+    if [[ $? -ne 0 ]]; then abort "File transfer failed."; fi    
+    echo -e "\e[32mSUBMISSION SUCCESSFUL:\e[0m checked and transferred."
+}
+
+abort() {
+    echo -e "\e[31m$1\e[0m"
+    exit 1
+}
+
+download() {
+    if [[ -f recent.tar.gz ]]; then
+	read -p "There is already a recent.tar.gz file in this directory, would you like to attempt to overwrite this file (y/n): " OVERWRITE
+	if [[ $OVERWRITE = "y" || $OVERWRITE = "Y" ]]; then
+	    rm -f recent.tar.gz
+	else
+	    echo "Aborting download."
+	    exit 0
+	fi	
+    fi
+
+    echo "Building and retrieving archive (you may be prompted for your csl password for this)... "
+    EXITCODE=$(rsync ${USERNAME}@best-linux.cs.wisc.edu:~/recent.tar.gz . --rsync-path="tar -czf ~/recent.tar.gz -C /p/course/cs400/activities/submissions/${TEAMFOLDER}/${PROJECTNAME}/ \$(ls /p/course/cs400/activities/submissions/${TEAMFOLDER}/${PROJECTNAME}/ | sort -n | tail -1) && rsync")
+    if [[ $EXITCODE -eq 0 && -f recent.tar.gz ]]; then
+       echo -e "\e[32mDOWNLOAD SUCCESSFUL.\e[0m"
+    else
+	echo "Encountered problem downloading submission."
+    fi
+}
+
+feedback() {
+    ssh ${USERNAME}@best-linux.cs.wisc.edu "/p/course/cs400/public/feedback"
+}
+
+main "$@"

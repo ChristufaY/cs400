@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+
+main() {
+    TEAM=$(grep -e "^\(.*,\)\?${USER}\(,.*\)\?$" /p/course/cs400/public/html/teams_2021_02_17.csv)
+    IFS=, read -a MEMBERS <<< $TEAM
+    for MEMBER in ${MEMBERS[@]}; do
+	if [[ "$MEMBER" != "$USER" ]]; then
+	    echo "Granting folder permissions to $MEMBER"
+	    afs_rseta . $MEMBER write
+	fi
+    done
+}
+
+
+main "$@"

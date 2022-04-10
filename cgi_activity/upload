@@ -1,0 +1,3 @@
+read -p 'Your CSL username: ' USERNAME
+echo "Username is ${USERNAME}. Please type your CSL password in the prompt below."
+rsync -rp *.class csv.cgi data.csv format.css ${USERNAME}@best-linux.cs.wisc.edu:~/public/html-s/cgi_activity/
